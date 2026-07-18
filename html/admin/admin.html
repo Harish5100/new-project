@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="../../css/admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .summary-card {
+            background: rgba(255,255,255,0.7);
+            border: 1px solid rgba(0,0,0,0.07);
+            border-radius: 14px;
+            padding: 18px 20px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: transform 0.2s;
+        }
+        .summary-card:hover { transform: translateY(-3px); }
+        .summary-card .val {
+            font-size: 32px;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 6px;
+        }
+        .summary-card .lbl {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+        }
+        .search-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .search-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 9px 14px;
+            border: 1px solid rgba(0,0,0,0.12);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            background: white;
+            color: var(--text-main);
+            transition: border-color 0.2s;
+        }
+        .search-input:focus { border-color: #6366f1; }
+        #students-table th, #students-table td { white-space: nowrap; }
+        .reg-badge {
+            background: #f3f4f6;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #374151;
+        }
+        .no-data-row td, .loading-row td {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 15px;
+        }
+        .loading-row td { color: #6366f1; }
+        .delete-btn {
+            background: none;
+            border: 1px solid rgba(239,68,68,0.4);
+            color: #ef4444;
+            border-radius: 6px;
+            padding: 3px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+        .delete-btn:hover { background: #ef4444; color: white; }
+        .sort-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0 4px;
+            color: rgba(255,255,255,0.7);
+            font-size: 11px;
+        }
+        .sort-btn:hover { color: white; }
+    </style>
+</head>
+
+<body>
+    <div class="background-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
+    <div class="main-container">
+        <div class="header">
+            <h1>Admin Dashboard</h1>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button class="btn-primary" onclick="uploadStudents()">⬆ Upload Students</button>
+                <button class="btn-success" onclick="window.location.href='../result/result.html'" style="margin-top:0;width:auto;">🏆 Leaderboard</button>
+                <button class="btn-primary" onclick="downloadResultsCSV()" style="margin-top:0;width:auto;background:linear-gradient(to right,#f59e0b,#d97706);border:none;color:white;">⬇ Download CSV</button>
+                <button class="btn-primary" onclick="window.location.href='quiz_settings.html'" style="margin-top:0;">⚙ Quiz Settings</button>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="val" id="stat-total" style="color:#6366f1;">—</div>
+                <div class="lbl">Total Students</div>
+            </div>
+            <div class="summary-card">
+                <div class="val" id="stat-present" style="color:#10b981;">—</div>
+                <div class="lbl">Present Today</div>
+            </div>
+            <div class="summary-card">
+                <div class="val" id="stat-absent" style="color:#ef4444;">—</div>
+                <div class="lbl">Absent Today</div>
+            </div>
+            <div class="summary-card">
+                <div class="val" id="stat-attempted" style="color:#3b82f6;">—</div>
+                <div class="lbl">Test Attempted</div>
+            </div>
+            <div class="summary-card">
+                <div class="val" id="stat-avg" style="color:#f59e0b;">—</div>
+                <div class="lbl">Avg High Score</div>
+            </div>
+        </div>
+
+        <!-- Student Table -->
+        <div class="card glass-panel">
+            <div class="card-header">
+                <h2>Student Performance</h2>
+                <p>Overview of student activity and test results.</p>
+            </div>
+
+            <div class="search-row">
+                <input id="search-input" class="search-input" type="text"
+                    placeholder="🔍  Search by name or reg no…"
+                    oninput="filterTable()">
+                <button class="btn-primary" onclick="loadStudentData()"
+                    style="margin-top:0;width:auto;padding:9px 18px;font-size:13px;">↻ Refresh</button>
+            </div>
+
+            <div class="table-container">
+                <table id="students-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Student Name <button class="sort-btn" onclick="sortTable('student_name')" title="Sort">⇅</button></th>
+                            <th>Reg No.</th>
+                            <th>Last Login <button class="sort-btn" onclick="sortTable('lastLogin')" title="Sort">⇅</button></th>
+                            <th>Time Spent</th>
+                            <th>Latest Score <button class="sort-btn" onclick="sortTable('latestScore')" title="Sort">⇅</button></th>
+                            <th>High Score <button class="sort-btn" onclick="sortTable('highScore')" title="Sort">⇅</button></th>
+                            <th>Attendance</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="student-list-body">
+                        <tr class="loading-row"><td colspan="9">⏳ Loading student data…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:')
+            ? 'http://127.0.0.1:5000' : '';
+
+        let allStudents = [];
+        let sortKey = 'student_name';
+        let sortAsc = true;
+
+        const user = JSON.parse(localStorage.getItem('currentUser'));
+        if (!user || user.role !== 'admin') {
+            window.location.href = '../index.html';
+        }
+
+        function formatTime(seconds) {
+            if (!seconds) return '0s';
+            if (seconds < 60) return `${seconds}s`;
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+        }
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = '../index.html';
+        }
+
+        function uploadStudents() {
+            window.location.href = '../import.html';
+        }
+
+        async function loadStudentData() {
+            const tbody = document.getElementById('student-list-body');
+            tbody.innerHTML = '<tr class="loading-row"><td colspan="9">⏳ Loading student data…</td></tr>';
+            try {
+                const res = await fetch(`${API_BASE}/api/results`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                allStudents = data.results || [];
+                allStudents.sort((a, b) =>
+                    (a.student_name || a.username).localeCompare(b.student_name || b.username)
+                );
+                updateSummaryCards();
+                renderTable(allStudents);
+            } catch (e) {
+                console.error('Failed to load students', e);
+                tbody.innerHTML = `<tr class="no-data-row"><td colspan="9">❌ Failed to load data. Is the server running?<br><small>${e.message}</small></td></tr>`;
+            }
+        }
+
+        function updateSummaryCards() {
+            const today    = new Date().toISOString().split('T')[0];
+            const total    = allStudents.length;
+            const present  = allStudents.filter(s => s.lastLogin && s.lastLogin.startsWith(today)).length;
+            const absent   = total - present;
+            const attempted = allStudents.filter(s => s.history && s.history.length > 0).length;
+            const scores   = allStudents.map(s => s.highScore || 0).filter(x => x > 0);
+            const avgScore = scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : 0;
+
+            document.getElementById('stat-total').textContent     = total;
+            document.getElementById('stat-present').textContent   = present;
+            document.getElementById('stat-absent').textContent    = absent;
+            document.getElementById('stat-attempted').textContent = attempted;
+            document.getElementById('stat-avg').textContent       = scores.length ? `${avgScore}%` : '—';
+        }
+
+        function renderTable(students) {
+            const tbody = document.getElementById('student-list-body');
+            tbody.innerHTML = '';
+            const today = new Date().toISOString().split('T')[0];
+
+            if (students.length === 0) {
+                tbody.innerHTML = `<tr class="no-data-row"><td colspan="9">
+                    📭 No students found.<br>
+                    <small>Upload students via <strong>Upload Students</strong> button above.</small>
+                </td></tr>`;
+                return;
+            }
+
+            students.forEach((student, idx) => {
+                const isPresent = student.lastLogin && student.lastLogin.startsWith(today);
+                const statusBg  = isPresent
+                    ? 'background:rgba(16,185,129,0.15);color:#059669;border:1px solid rgba(16,185,129,0.3);'
+                    : 'background:rgba(239,68,68,0.12);color:#dc2626;border:1px solid rgba(239,68,68,0.25);';
+                const statusTxt = isPresent ? '✔ Present' : '✘ Absent';
+
+                const scoreStyle = student.latestScore >= 80 ? 'background:rgba(16,185,129,0.15);color:#059669;'
+                    : student.latestScore >= 50 ? 'background:rgba(245,158,11,0.15);color:#d97706;'
+                    : 'background:rgba(239,68,68,0.12);color:#dc2626;';
+
+                const name  = student.student_name || student.username;
+                const regNo = student.username;
+
+                tbody.innerHTML += `
+                <tr>
+                    <td style="color:var(--text-muted);font-size:13px;">${idx + 1}</td>
+                    <td>
+                        <a href="../quiz/dashboard.html?username=${encodeURIComponent(regNo)}"
+                           style="color:#6366f1;text-decoration:none;font-weight:600;"
+                           title="View dashboard">${name}</a>
+                    </td>
+                    <td><span class="reg-badge">${regNo}</span></td>
+                    <td style="font-size:13px;color:var(--text-muted);">${student.lastLogin || '—'}</td>
+                    <td>${formatTime(student.totalTimeSpent || 0)}</td>
+                    <td><span class="score-badge" style="${scoreStyle}padding:3px 9px;border-radius:8px;font-weight:700;font-size:13px;">${student.latestScore !== undefined ? student.latestScore + '%' : '—'}</span></td>
+                    <td><span style="font-weight:700;color:#6366f1;">${student.highScore ? student.highScore + '%' : '—'}</span></td>
+                    <td><span style="padding:4px 10px;border-radius:10px;font-weight:600;font-size:12px;${statusBg}">${statusTxt}</span></td>
+                    <td><button class="delete-btn" onclick="deleteStudent('${regNo}')">🗑 Delete</button></td>
+                </tr>`;
+            });
+        }
+
+        function filterTable() {
+            const q = document.getElementById('search-input').value.toLowerCase().trim();
+            if (!q) { renderTable(allStudents); return; }
+            const filtered = allStudents.filter(s =>
+                (s.student_name || '').toLowerCase().includes(q) ||
+                (s.username     || '').toLowerCase().includes(q)
+            );
+            renderTable(filtered);
+        }
+
+        function sortTable(key) {
+            if (sortKey === key) { sortAsc = !sortAsc; } else { sortKey = key; sortAsc = true; }
+            allStudents.sort((a, b) => {
+                let va = a[key] ?? '';
+                let vb = b[key] ?? '';
+                if (typeof va === 'number' && typeof vb === 'number') return sortAsc ? va - vb : vb - va;
+                return sortAsc ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+            });
+            filterTable();
+        }
+
+        async function deleteStudent(username) {
+            if (!confirm(`Delete all results for "${username}"?\nThis cannot be undone.`)) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/results/${encodeURIComponent(username)}`, { method: 'DELETE' });
+                if (res.ok) {
+                    allStudents = allStudents.filter(s => s.username !== username);
+                    updateSummaryCards();
+                    filterTable();
+                } else {
+                    const d = await res.json();
+                    alert('Error: ' + (d.error || 'Delete failed'));
+                }
+            } catch (e) { alert('Server error: ' + e.message); }
+        }
+
+        function downloadResultsCSV() {
+            if (!allStudents || allStudents.length === 0) { alert('No results available to download.'); return; }
+            const today = new Date().toISOString().split('T')[0];
+            let csv = 'Student Name,Reg No.,Last Login,Time Spent (s),Latest Score,High Score,Attendance Today\n';
+            allStudents.forEach(student => {
+                const isPresent = student.lastLogin && student.lastLogin.startsWith(today);
+                const esc = v => `"${String(v || '').replace(/"/g, '""')}"`;
+                csv += [
+                    esc(student.student_name || student.username),
+                    esc(student.username),
+                    esc(student.lastLogin || ''),
+                    student.totalTimeSpent || 0,
+                    student.latestScore !== undefined ? student.latestScore : '',
+                    student.highScore || 0,
+                    esc(isPresent ? 'Present' : 'Absent')
+                ].join(',') + '\n';
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url  = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `quiz_results_${today}.csv`;
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        window.onload = loadStudentData;
+    </script>
+</body>
+
+</html>

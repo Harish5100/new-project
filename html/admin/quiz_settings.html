@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Settings</title>
+    <link rel="stylesheet" href="../../css/admin.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
+    <div class="main-container">
+        <div class="header">
+            <h1>Quiz Settings</h1>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-primary" onclick="window.location.href='admin.html'" style="margin-top: 0; width: auto;">Back to Dashboard</button>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="glass-panel">
+            <div class="card-header">
+                <h2>Quiz Configuration</h2>
+                <p>Modify quiz questions, options, and end time.</p>
+            </div>
+            
+            <div class="settings-group" style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 25px;">
+                <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 250px;">
+                    <label style="font-weight: 600; min-width: 100px;">Start Time:</label>
+                    <input type="datetime-local" id="start-time-input" class="input-field" style="width: 100%;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 250px;">
+                    <label style="font-weight: 600; min-width: 100px;">End Time:</label>
+                    <input type="datetime-local" id="end-time-input" class="input-field" style="width: 100%;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 250px;">
+                    <label style="font-weight: 600; min-width: 150px;">Time Limit (sec):</label>
+                    <input type="number" id="quiz-time-input" class="input-field" style="width: 100%;" min="5" value="30">
+                </div>
+            </div>
+
+            <div id="questions-container">
+                <!-- Questions rendered here -->
+            </div>
+
+            <div style="display: flex; gap: 15px; margin-top: 30px; flex-wrap: wrap;">
+                <button class="btn-primary" onclick="addQuestion()" style="background: linear-gradient(to right, #10b981, #059669); border: none; padding: 12px 24px; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; font-size: 14px;">+ Add Question</button>
+                <button class="btn-primary" onclick="document.getElementById('bulk-json-file').click()" style="background: linear-gradient(to right, #3b82f6, #2563eb); border: none; padding: 12px 24px; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; font-size: 14px;">Upload JSON</button>
+                <button class="btn-primary" onclick="document.getElementById('bulk-pdf-file').click()" style="background: linear-gradient(to right, #8b5cf6, #6d28d9); border: none; padding: 12px 24px; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; font-size: 14px;">Upload PDF</button>
+                <button class="btn-primary" onclick="showTextImportModal()" style="background: linear-gradient(to right, #ec4899, #be185d); border: none; padding: 12px 24px; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; font-size: 14px;">Import from Text</button>
+                <button class="btn-danger" onclick="removeAllQuestions()" style="background: linear-gradient(to right, #ef4444, #dc2626); border: none; padding: 12px 24px; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; font-size: 14px;">Remove All Questions</button>
+                <button class="btn-success" onclick="saveQuiz()" style="margin-top: 0; padding: 12px 24px; font-size: 14px; width: auto; margin-left: auto;">Save Quiz</button>
+            </div>
+            <input type="file" id="bulk-json-file" accept=".json" style="display: none;" onchange="handleBulkJson(event)">
+            <input type="file" id="bulk-pdf-file" accept=".pdf" style="display: none;" onchange="handlePdfUpload(event)">
+            <p id="status-message" class="status-msg"></p>
+        </div>
+    </div>
+
+    <!-- Text Import Modal -->
+    <div id="text-import-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="glass-panel" style="width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
+            <h2 style="margin-bottom: 15px;">Import Questions from Text / PDF</h2>
+            <p style="font-size: 14px; color: #ccc; margin-bottom: 15px; line-height: 1.5;">
+                Copy text from your PDF and paste it below.<br>
+                <b>Supported Formats:</b><br>
+                <span style="color: #60a5fa; font-weight: 600;">Option A (Q-A format):</span><br>
+                - Separate question blocks with double spacing (blank lines).<br>
+                - Question starts with optional <code>Q1.</code>, <code>Q2.</code>, etc.<br>
+                - Options start with <code>A.</code>, <code>B.</code>, <code>C.</code>, <code>D.</code> (or with parenthesis like <code>A)</code>).<br>
+                - The correct answer is indicated by a line starting with <code>Answer: A</code> (or Ans: A).<br>
+                <i>Example:</i><br>
+                <code style="background: rgba(255,255,255,0.08); display: block; padding: 8px; border-radius: 6px; margin: 4px 0 10px; font-family: monospace; font-size: 13px; line-height: 1.4;">
+                Q1. What does HTML stand for?<br>
+                A. Hyper Text Markup Language<br>
+                B. High Text Machine Language<br>
+                Answer: A
+                </code>
+                <span style="color: #60a5fa; font-weight: 600;">Option B (Asterisk format):</span><br>
+                - First line is the question.<br>
+                - Options on following lines.<br>
+                - Start the correct option with an asterisk (<code>*</code>).<br>
+                <i>Example:</i><br>
+                <code style="background: rgba(255,255,255,0.08); display: block; padding: 8px; border-radius: 6px; margin: 4px 0 0; font-family: monospace; font-size: 13px; line-height: 1.4;">
+                What is 2 + 2?<br>
+                3<br>
+                *4<br>
+                5
+                </code>
+            </p>
+            <textarea id="import-text-area" class="input-field full-width" style="height: 200px; font-family: monospace; padding: 10px; resize: vertical;" placeholder="Paste text here..."></textarea>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn-success" onclick="processTextImport()">Import</button>
+                <button class="btn-danger" onclick="hideTextImportModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' ? 'http://127.0.0.1:5000' : '';
+        
+        let quizData = { startTime: "", endTime: "", questions: [] };
+
+        // Check auth
+        const user = JSON.parse(localStorage.getItem('currentUser'));
+        if (!user || user.role !== 'admin') {
+            window.location.href = '../index.html';
+        }
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = '../index.html';
+        }
+
+        async function fetchQuizData() {
+            try {
+                const res = await fetch(`${API_BASE}/api/quiz`);
+                if (res.ok) {
+                    quizData = await res.json();
+                    document.getElementById('start-time-input').value = quizData.startTime || "";
+                    document.getElementById('end-time-input').value = quizData.endTime || "";
+                    document.getElementById('quiz-time-input').value = quizData.time || 30;
+                    renderQuestions();
+                }
+            } catch(e) {
+                console.error("Error fetching quiz data:", e);
+                showStatus("Error loading quiz data", "error");
+            }
+        }
+
+        function renderQuestions() {
+            const container = document.getElementById('questions-container');
+            container.innerHTML = '';
+
+            quizData.questions.forEach((q, qIndex) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'glass-panel-inner';
+                
+                let optionsHtml = '';
+                q.options.forEach((opt, oIndex) => {
+                    optionsHtml += `
+                        <div class="option-item">
+                            <input type="radio" name="correct-${qIndex}" ${opt.isCorrect ? 'checked' : ''} onclick="setCorrect(${qIndex}, ${oIndex})" title="Mark as correct option">
+                            <input type="text" class="input-field full-width" style="margin-bottom: 0;" value="${opt.text}" oninput="updateOption(${qIndex}, ${oIndex}, this.value)" placeholder="Option text">
+                            <button class="btn-danger" onclick="removeOption(${qIndex}, ${oIndex})">X</button>
+                        </div>
+                    `;
+                });
+
+                qDiv.innerHTML = `
+                    <div class="q-header">
+                        <h3 style="margin-bottom: 10px; font-size: 16px;">Question ${qIndex + 1}</h3>
+                        <button class="btn-danger" onclick="removeQuestion(${qIndex})">Remove Question</button>
+                    </div>
+                    <input type="text" class="input-field full-width" value="${q.question}" oninput="updateQuestion(${qIndex}, this.value)" placeholder="Enter question text here">
+                    <input type="text" class="input-field full-width" style="margin-top: 8px; margin-bottom: 8px;" value="${q.example || ''}" oninput="updateExample(${qIndex}, this.value)" placeholder="Enter explanation / example / solution steps (optional)">
+                    <div class="options-list">
+                        ${optionsHtml}
+                        <button class="btn-primary" style="padding: 6px 12px; font-size: 13px; margin-top: 10px; width: auto;" onclick="addOption(${qIndex})">+ Add Option</button>
+                    </div>
+                `;
+                container.appendChild(qDiv);
+            });
+        }
+
+        function updateQuestion(qIndex, val) {
+            quizData.questions[qIndex].question = val;
+        }
+
+        function updateExample(qIndex, val) {
+            quizData.questions[qIndex].example = val;
+        }
+
+        function updateOption(qIndex, oIndex, val) {
+            quizData.questions[qIndex].options[oIndex].text = val;
+        }
+
+        function setCorrect(qIndex, oIndex) {
+            quizData.questions[qIndex].options.forEach((opt, i) => {
+                opt.isCorrect = (i === oIndex);
+            });
+        }
+
+        function addOption(qIndex) {
+            quizData.questions[qIndex].options.push({ text: "", isCorrect: false });
+            renderQuestions();
+        }
+
+        function removeOption(qIndex, oIndex) {
+            quizData.questions[qIndex].options.splice(oIndex, 1);
+            renderQuestions();
+        }
+
+        function addQuestion() {
+            quizData.questions.push({
+                question: "",
+                example: "",
+                options: [
+                    { text: "", isCorrect: true },
+                    { text: "", isCorrect: false }
+                ]
+            });
+            renderQuestions();
+        }
+
+        function removeQuestion(qIndex) {
+            quizData.questions.splice(qIndex, 1);
+            renderQuestions();
+        }
+
+        function removeAllQuestions() {
+            if (confirm("Are you sure you want to remove ALL questions? This action cannot be undone.")) {
+                quizData.questions = [];
+                renderQuestions();
+                showStatus("All questions removed. Remember to Save Quiz.", "success");
+            }
+        }
+
+        function showStatus(msg, type) {
+            const el = document.getElementById('status-message');
+            el.textContent = msg;
+            el.className = 'status-msg ' + type;
+            setTimeout(() => el.textContent = '', 3000);
+        }
+
+        async function saveQuiz() {
+            quizData.startTime = document.getElementById('start-time-input').value;
+            quizData.endTime = document.getElementById('end-time-input').value;
+            quizData.time = parseInt(document.getElementById('quiz-time-input').value) || 30;
+            
+            try {
+                const res = await fetch(`${API_BASE}/api/quiz`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(quizData)
+                });
+                
+                if (res.ok) {
+                    showStatus("Quiz saved successfully!", "success");
+                } else {
+                    const data = await res.json();
+                    showStatus(data.error || "Failed to save quiz", "error");
+                }
+            } catch(e) {
+                console.error("Save error:", e);
+                showStatus("Server connection failed.", "error");
+            }
+        }
+
+        // --- Bulk Import Functions ---
+
+        function handleBulkJson(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const imported = JSON.parse(evt.target.result);
+                    let importedQuestions = [];
+                    if (Array.isArray(imported)) {
+                        importedQuestions = imported;
+                    } else if (imported.questions && Array.isArray(imported.questions)) {
+                        importedQuestions = imported.questions;
+                    } else {
+                        throw new Error("Invalid JSON format. Expected an array of questions.");
+                    }
+                    
+                    // Simple validation
+                    importedQuestions = importedQuestions.filter(q => q.question && Array.isArray(q.options));
+                    
+                    if (importedQuestions.length === 0) {
+                        showStatus("No valid questions found in JSON.", "error");
+                        return;
+                    }
+
+                    quizData.questions = quizData.questions.concat(importedQuestions);
+                    renderQuestions();
+                    showStatus(`${importedQuestions.length} questions imported. Remember to Save!`, "success");
+                } catch(err) {
+                    showStatus("Failed to parse JSON.", "error");
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = ''; // Reset input
+        }
+
+        async function handlePdfUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            showStatus("Extracting text from PDF...", "success");
+
+            const formData = new FormData();
+            formData.append('pdf', file);
+
+            try {
+                const res = await fetch(`${API_BASE}/api/quiz/upload-pdf`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    document.getElementById('import-text-area').value = data.text;
+                    document.getElementById('text-import-modal').style.display = 'flex';
+                    showStatus("PDF text extracted! Please verify and fix the formatting before importing.", "success");
+                } else {
+                    showStatus(data.error || "Failed to extract PDF.", "error");
+                }
+            } catch(err) {
+                console.error(err);
+                showStatus("Server connection failed during PDF upload.", "error");
+            }
+            e.target.value = ''; // Reset input
+        }
+
+        function showTextImportModal() {
+            document.getElementById('import-text-area').value = '';
+            document.getElementById('text-import-modal').style.display = 'flex';
+        }
+
+        function hideTextImportModal() {
+            document.getElementById('text-import-modal').style.display = 'none';
+        }
+
+        function processTextImport() {
+            const text = document.getElementById('import-text-area').value.trim();
+            if (!text) {
+                hideTextImportModal();
+                return;
+            }
+
+            // Split by double newlines to separate question blocks
+            const blocks = text.split(/\r?\n\s*\r?\n/);
+            let importedCount = 0;
+
+            blocks.forEach(block => {
+                const lines = block.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+                if (lines.length >= 2) {
+                    let qText = "";
+                    let options = [];
+                    
+                    // Detect if the block matches the Q-A format with "Answer: X" or options starting with A. B. C. D.
+                    let isNewFormat = false;
+                    let ansKey = null;
+                    
+                    // Check for Answer/Ans line
+                    for (let line of lines) {
+                        if (/^(?:Answer|Ans)\s*:\s*[A-Z0-9]/i.test(line)) {
+                            isNewFormat = true;
+                            const match = line.match(/^(?:Answer|Ans)\s*:\s*([A-Z0-9])/i);
+                            if (match) {
+                                ansKey = match[1].toUpperCase();
+                            }
+                            break;
+                        }
+                    }
+                    
+                    // If no Answer line but lines start with option letters (A., B., C., D.), treat as new format too
+                    if (!isNewFormat) {
+                        for (let line of lines) {
+                            if (/^[A-D]\s*[\.\)]\s+/i.test(line)) {
+                                isNewFormat = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (isNewFormat) {
+                        const questionParts = [];
+                        const parsedOptions = [];
+                        
+                        lines.forEach(line => {
+                            // Check if it's the Answer line
+                            const ansMatch = line.match(/^(?:Answer|Ans)\s*:\s*([A-Z0-9])/i);
+                            // Check if it's an option (e.g. A. option text, or A) option text)
+                            const optMatch = line.match(/^([A-H1-9])\s*[\.\)]\s*(.*)/i);
+                            
+                            if (ansMatch) {
+                                ansKey = ansMatch[1].toUpperCase();
+                            } else if (optMatch) {
+                                parsedOptions.push({
+                                    key: optMatch[1].toUpperCase(),
+                                    text: optMatch[2].trim()
+                                });
+                            } else {
+                                questionParts.push(line);
+                            }
+                        });
+                        
+                        // Extract question text and remove numbering prefix (e.g., Q1., Q02., Q3:)
+                        let rawQ = questionParts.join('\n');
+                        qText = rawQ.replace(/^Q\d+[\.\:\s]*/i, '').trim();
+                        
+                        parsedOptions.forEach(opt => {
+                            options.push({
+                                text: opt.text,
+                                isCorrect: (opt.key === ansKey)
+                            });
+                        });
+                        
+                        // If no correct option was set, default to first option
+                        if (options.length > 0 && !options.some(o => o.isCorrect)) {
+                            options[0].isCorrect = true;
+                        }
+                    } else {
+                        // Fallback to original asterisk (*) format
+                        qText = lines[0];
+                        for (let i = 1; i < lines.length; i++) {
+                            let optText = lines[i];
+                            let isCorrect = false;
+                            if (optText.startsWith('*')) {
+                                isCorrect = true;
+                                optText = optText.substring(1).trim();
+                            }
+                            options.push({ text: optText, isCorrect: isCorrect });
+                        }
+                        if (options.length > 0 && !options.some(o => o.isCorrect)) {
+                            options[0].isCorrect = true;
+                        }
+                    }
+                    
+                    if (qText && options.length > 0) {
+                        quizData.questions.push({
+                            question: qText,
+                            options: options
+                        });
+                        importedCount++;
+                    }
+                }
+            });
+
+            if (importedCount > 0) {
+                renderQuestions();
+                showStatus(`${importedCount} questions imported. Remember to Save!`, "success");
+            } else {
+                showStatus("No valid questions could be parsed.", "error");
+            }
+            hideTextImportModal();
+        }
+
+        window.onload = fetchQuizData;
+    </script>
+</body>
+</html>

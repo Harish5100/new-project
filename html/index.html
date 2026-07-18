@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Aptitude Test - Access</title>
+    <link rel="stylesheet" href="../css/login.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
+    <div class="container">
+        <h1>Digital Aptitude</h1>
+
+
+        <!-- Login Form -->
+        <form id="login-form" onsubmit="handleLogin(event)">
+            <h2>Welcome Back</h2>
+            <div class="input-group">
+                <label>Username</label>
+                <input type="text" id="login-username" required placeholder="Enter your username">
+            </div>
+            <div class="input-group">
+                <label>Password (Optional for Students)</label>
+                <input type="password" id="login-password" placeholder="Enter your password">
+            </div>
+            <div class="options">
+                <label><input type="checkbox" id="remember-me"> Remember me</label>
+                <a href="#" id="forgot-pw-link" onclick="showForgotPassword(event)" style="color: #6366f1; font-size: 13px; font-weight: 500; text-decoration: none; transition: color 0.2s;" onmouseover="this.style.color='#4f46e5'" onmouseout="this.style.color='#6366f1'">Forgot Password?</a>
+            </div>
+            <p id="login-error" class="error-message"></p>
+            <button type="submit" class="submit-btn">Login</button>
+        </form>
+
+        <!-- Forgot Password Panel -->
+        <div id="forgot-pw-panel" class="hidden" style="margin-top: 10px;">
+            <div style="background: #f5f3ff; border: 1.5px solid #c4b5fd; border-radius: 16px; padding: 24px;">
+                <h3 style="color: #4f46e5; font-size: 16px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                    &#128273; Forgot Password?
+                </h3>
+                <p style="color: #6b7280; font-size: 13px; margin-bottom: 16px;">Enter your Registration Number to see your password.</p>
+                <div class="input-group" style="margin-bottom: 12px;">
+                    <label style="color: #374151; font-size: 13px; font-weight: 500;">Registration Number</label>
+                    <input type="text" id="forgot-reg-id" placeholder="e.g. 22CS001" style="width:100%; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #c4b5fd; background: white; color: #1f2937; font-size: 14px; box-sizing: border-box; margin-top: 6px; outline:none; font-family: inherit;" onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#c4b5fd'">
+                </div>
+                <button onclick="handleForgotPassword()" id="forgot-submit-btn" style="width:100%; padding: 11px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; font-weight: 600; font-size: 14px; border: none; cursor: pointer; transition: opacity 0.2s; font-family: inherit;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+                    Show My Password
+                </button>
+                <div id="forgot-result" style="margin-top: 14px; display: none;"></div>
+                <p style="margin-top: 12px; text-align: center;">
+                    <a href="#" onclick="hideForgotPassword(event)" style="color: #6b7280; font-size: 12px; text-decoration: none;" onmouseover="this.style.color='#4f46e5'" onmouseout="this.style.color='#6b7280'">&#8592; Back to Login</a>
+                </p>
+            </div>
+        </div>
+
+
+
+
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const savedUsername = localStorage.getItem('savedUsername');
+            const savedPassword = localStorage.getItem('savedPassword');
+            if (savedUsername && savedPassword) {
+                document.getElementById('login-username').value = savedUsername;
+                document.getElementById('login-password').value = savedPassword;
+                document.getElementById('remember-me').checked = true;
+            }
+        });
+
+
+
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' ? 'http://127.0.0.1:5000' : '';
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            const errorEl = document.getElementById('login-error');
+            
+            errorEl.textContent = '';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    // Handle remember me
+                    if (document.getElementById('remember-me').checked) {
+                        localStorage.setItem('savedUsername', username);
+                        localStorage.setItem('savedPassword', password);
+                    } else {
+                        localStorage.removeItem('savedUsername');
+                        localStorage.removeItem('savedPassword');
+                    }
+
+                    // Store user session info
+                    localStorage.setItem('currentUser', JSON.stringify(data.user));
+                    
+                    if (data.user.role === 'admin') {
+                        window.location.href = 'admin/admin.html';
+                    } else {
+                        window.location.href = 'quiz/dashboard.html';
+                    }
+                } else {
+                    errorEl.textContent = data.error || 'Login failed';
+                }
+            } catch (err) {
+                errorEl.textContent = 'Server connection failed. Is the backend server running?';
+            }
+        }
+
+
+
+
+
+        // ── Forgot Password ────────────────────────────────────────────
+        function showForgotPassword(e) {
+            e.preventDefault();
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('forgot-pw-panel').classList.remove('hidden');
+            document.getElementById('forgot-reg-id').value = '';
+            const resultEl = document.getElementById('forgot-result');
+            resultEl.style.display = 'none';
+            resultEl.innerHTML = '';
+        }
+
+        function hideForgotPassword(e) {
+            e.preventDefault();
+            document.getElementById('forgot-pw-panel').classList.add('hidden');
+            document.getElementById('login-form').style.display = '';
+        }
+
+        async function handleForgotPassword() {
+            const regId = document.getElementById('forgot-reg-id').value.trim();
+            const resultEl = document.getElementById('forgot-result');
+            
+            if (!regId) {
+                resultEl.style.display = 'block';
+                resultEl.innerHTML = `<div style="padding:12px 14px; border-radius:10px; background:#fef2f2; border:1px solid #fecaca; color:#dc2626; font-size:13px;">&#9888;&#65039; Please enter your Registration Number.</div>`;
+                return;
+            }
+
+            const btn = document.getElementById('forgot-submit-btn');
+            btn.textContent = 'Checking...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${API_BASE}/api/forgot-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reg_id: regId })
+                });
+                const data = await res.json();
+                resultEl.style.display = 'block';
+
+                if (res.ok) {
+                    if (data.has_password && data.password) {
+                        // Show the actual password clearly
+                        resultEl.innerHTML = `
+                            <div style="padding:18px; border-radius:14px; background:#f0fdf4; border:1.5px solid #86efac;">
+                                <p style="color:#166534; font-weight:700; font-size:14px; margin-bottom:10px;">&#10003; Account found &#8212; ${data.student_name}</p>
+                                <p style="color:#374151; font-size:12px; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.06em; font-weight:600;">Your Password</p>
+                                <div style="display:flex; align-items:center; gap:10px; background:white; border:1.5px solid #6366f1; border-radius:10px; padding:10px 14px;">
+                                    <span style="font-family:'Courier New',monospace; font-size:20px; font-weight:700; color:#4f46e5; letter-spacing:0.08em; flex:1;">${data.password}</span>
+                                    <button onclick="copyForgotPw('${data.password.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', this)" title="Copy password"
+                                        style="background:#6366f1; border:none; border-radius:8px; padding:6px 12px; cursor:pointer; color:white; font-size:12px; font-weight:600; transition:background 0.2s; font-family:inherit;"
+                                        onmouseover="this.style.background='#4f46e5'" onmouseout="this.style.background='#6366f1'">
+                                        &#128203; Copy
+                                    </button>
+                                </div>
+                                <p style="color:#6b7280; font-size:11px; margin-top:8px;">This is your Registration Number, which is used as your login password.</p>
+                            </div>`;
+                    } else {
+                        // Fallback if plain_dob not stored
+                        resultEl.innerHTML = `
+                            <div style="padding:16px; border-radius:12px; background:#f0fdf4; border:1.5px solid #86efac;">
+                                <p style="color:#166534; font-weight:600; font-size:14px; margin-bottom:6px;">&#10003; Account found &#8212; ${data.student_name}</p>
+                                <p style="color:#374151; font-size:13px;">&#128273; Your password is your <strong>Registration Number</strong> as entered in the system.</p>
+                            </div>`;
+                    }
+                } else {
+                    resultEl.innerHTML = `<div style="padding:12px 14px; border-radius:10px; background:#fef2f2; border:1px solid #fecaca; color:#dc2626; font-size:13px;">&#10060; ${data.error}</div>`;
+                }
+            } catch (err) {
+                resultEl.style.display = 'block';
+                resultEl.innerHTML = `<div style="padding:12px 14px; border-radius:10px; background:#fef2f2; border:1px solid #fecaca; color:#dc2626; font-size:13px;">&#10060; Server connection failed. Is the backend running?</div>`;
+            } finally {
+                btn.textContent = 'Show My Password';
+                btn.disabled = false;
+            }
+        }
+
+        function copyForgotPw(text, btn) {
+            navigator.clipboard.writeText(text).then(() => {
+                btn.textContent = '✅ Copied!';
+                btn.style.background = 'rgba(16,185,129,0.3)';
+                setTimeout(() => {
+                    btn.textContent = '📋 Copy';
+                    btn.style.background = 'rgba(255,255,255,0.1)';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <link rel="stylesheet" href="../../css/admin.css"> <!-- Reusing admin styles for consistency -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 10px;
+            opacity: 0.8;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .stat-title {
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        @media (max-width: 768px) {
+            .charts-container { grid-template-columns: 1fr; }
+        }
+        .chart-box {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        .badge-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,140,0,0.2));
+            border: 1px solid rgba(255,215,0,0.5);
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #ffd700;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .badge.silver { background: linear-gradient(135deg, rgba(192,192,192,0.2), rgba(128,128,128,0.2)); border-color: rgba(192,192,192,0.5); color: #e2e8f0; }
+        .badge.bronze { background: linear-gradient(135deg, rgba(205,127,50,0.2), rgba(139,69,19,0.2)); border-color: rgba(205,127,50,0.5); color: #cd7f32; }
+        @keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+        
+        .history-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        .history-table th {
+            padding: 15px;
+            background: rgba(0,0,0,0.05);
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .history-table td {
+            padding: 15px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            color: var(--text-main);
+        }
+        .history-table tr:hover td {
+            background: rgba(0,0,0,0.03);
+        }
+        .history-score-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .score-good { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.5); }
+        .score-avg { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.5); }
+        .score-poor { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.5); }
+    </style>
+</head>
+<body>
+    <div class="background-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
+<div class="main-container" style="max-width: 900px;">
+    <div class="header">
+        <div>
+            <h1 id="dashboard-title">Student Dashboard</h1>
+            <p id="date-greeting" style="color: var(--text-muted); font-weight: 500; font-size: 14px; text-align: left; margin-top: -5px; margin-bottom: 0;"></p>
+        </div>
+        <button id="header-btn" class="logout-btn" onclick="handleHeaderAction()">Logout</button>
+    </div>
+
+    <div class="glass-panel" style="margin-bottom: 30px;">
+        <h2 id="welcome-msg" style="margin-bottom: 20px; font-size: 26px; font-weight: 800; color: var(--text-main);">Welcome</h2>
+        
+        <div class="dashboard-grid">
+            <div class="stat-card">
+                <svg class="stat-icon" fill="none" stroke="#3b82f6" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <div id="total-time" class="stat-value" style="color: #3b82f6;">0m</div>
+                <div class="stat-title">Total Time</div>
+            </div>
+            <div class="stat-card">
+                <svg class="stat-icon" fill="none" stroke="#10b981" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <div id="latest-score" class="stat-value" style="color: #10b981;">0</div>
+                <div class="stat-title">Latest Score</div>
+            </div>
+            <div class="stat-card">
+                <svg class="stat-icon" fill="none" stroke="#f59e0b" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                <div id="high-score" class="stat-value" style="color: #f59e0b;">0</div>
+                <div class="stat-title">High Score</div>
+            </div>
+            <div class="stat-card">
+                <svg class="stat-icon" fill="none" stroke="#ec4899" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                <div id="total-attempts" class="stat-value" style="color: #ec4899;">0</div>
+                <div class="stat-title">Total Attempts</div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 25px;">
+            <h3 style="font-size: 16px; color: var(--text-main); font-weight: 700; margin-bottom: 10px;">Achievements</h3>
+            <div id="badges-container" class="badge-container">
+                <div class="badge silver" style="opacity: 0.5; font-weight: normal;"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg> No badges yet. Take a test!</div>
+            </div>
+        </div>
+
+        <div class="charts-container">
+            <div class="chart-box">
+                <h3 style="color: var(--text-main); font-weight: 700; font-size: 15px; margin-bottom: 15px; text-align: center;">Daily Time Spent</h3>
+                <canvas id="timeChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h3 style="color: var(--text-main); font-weight: 700; font-size: 15px; margin-bottom: 15px; text-align: center;">Accuracy Overview</h3>
+                <canvas id="accuracyChart"></canvas>
+            </div>
+        </div>
+
+        <div id="action-buttons" style="display: flex; gap: 15px;">
+            <button id="start-btn" class="btn-primary" style="flex: 1; padding: 15px; font-size: 18px; border-radius: 12px; background: linear-gradient(135deg, #3b82f6, #2563eb); box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);" onclick="startAssessment()">Start Assessment</button>
+            <button class="btn-success" style="flex: 1; margin-top: 0; padding: 15px; font-size: 18px; border-radius: 12px; background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);" onclick="window.location.href='../result/result.html'">View Leaderboard</button>
+        </div>
+        <p id="schedule-msg" style="text-align: center; color: #f87171; font-weight: bold; margin-top: 15px;"></p>
+
+        <div style="margin-top: 30px;">
+            <h3 style="font-size: 18px; margin-bottom: 15px; color: var(--text-main); font-weight: 700;">Past Attempts</h3>
+            <div style="max-height: 250px; overflow-y: auto; background: rgba(255,255,255,0.5); border-radius: 12px; border: 1px solid rgba(0,0,0,0.05);">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Score</th>
+                            <th>Time Spent</th>
+                            <th>Accuracy</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-body">
+                        <tr><td colspan="4" style="text-align: center; padding: 20px; color: var(--text-muted); font-weight: 500;">No attempts yet.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const viewUser = urlParams.get('username');
+    
+    const user = JSON.parse(localStorage.getItem('currentUser'));
+    if (!user) {
+        window.location.href = '../index.html';
+    }
+
+    const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' ? 'http://127.0.0.1:5000' : '';
+    let targetUsername = user.username;
+    let isAdminView = false;
+
+    if (user.role === 'admin' && viewUser) {
+        isAdminView = true;
+        targetUsername = viewUser;
+        document.getElementById('action-buttons').style.display = 'none';
+        document.getElementById('dashboard-title').innerText = `${targetUsername}'s Dashboard`;
+        const headerBtn = document.getElementById('header-btn');
+        headerBtn.innerText = 'Back to Admin';
+        headerBtn.className = 'btn-primary';
+    } else if (user.role !== 'student') {
+        window.location.href = '../index.html';
+    }
+
+    // Set greeting and date (will be updated with real name after API loads)
+    const hours = new Date().getHours();
+    let greeting = hours < 12 ? "Good Morning" : hours < 18 ? "Good Afternoon" : "Good Evening";
+    document.getElementById('welcome-msg').innerText = isAdminView ? `Viewing ${targetUsername}'s Data` : `${greeting}, ...`;
+    document.getElementById('date-greeting').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    let quizSchedule = null;
+    let studentData = null;
+    let timeChart = null;
+    let accuracyChart = null;
+
+    function formatTime(seconds) {
+        if (seconds < 60) return `${seconds}s`;
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+    }
+
+    async function loadStatsAndSchedule() {
+        try {
+            const res = await fetch(`${API_BASE}/api/results`);
+            const data = await res.json();
+            const results = data.results || [];
+            const myStat = results.find(s => s.username === targetUsername);
+            
+            if (myStat) {
+                studentData = myStat;
+
+                // Update greeting with real student name
+                if (!isAdminView) {
+                    const displayName = myStat.student_name || targetUsername;
+                    document.getElementById('welcome-msg').innerText = `${greeting}, ${displayName}!`;
+                } else {
+                    const displayName = myStat.student_name || targetUsername;
+                    document.getElementById('welcome-msg').innerText = `Viewing ${displayName}'s Data`;
+                    document.getElementById('dashboard-title').innerText = `${displayName}'s Dashboard`;
+                }
+
+                document.getElementById('total-time').innerText = formatTime(myStat.totalTimeSpent);
+                document.getElementById('latest-score').innerText = myStat.latestScore;
+                
+                // Calculate High Score & Total Attempts
+                let highScore = 0;
+                let totalAttempts = myStat.history ? myStat.history.length : 0;
+                
+                if (myStat.history && totalAttempts > 0) {
+                    highScore = Math.max(...myStat.history.map(h => h.score));
+                    document.getElementById('high-score').innerText = highScore;
+                    document.getElementById('total-attempts').innerText = totalAttempts;
+
+                    // Populate Badges
+                    populateBadges(highScore, totalAttempts, myStat.totalTimeSpent, myStat.correct);
+
+                    // Load history table
+                    const tbody = document.getElementById('history-body');
+                    tbody.innerHTML = '';
+                    const historyWithIdx = myStat.history.map((h, originalIdx) => {
+                        return { ...h, originalIdx: originalIdx };
+                    });
+                    
+                    historyWithIdx.slice().reverse().forEach(h => {
+                        let scoreClass = 'score-poor';
+                        if (h.score >= 80) scoreClass = 'score-good';
+                        else if (h.score >= 50) scoreClass = 'score-avg';
+                        
+                        let totalQs = (h.correct || 0) + (h.wrong || 0) + (h.unanswered || 0);
+                        let accuracy = totalQs > 0 ? Math.round((h.correct / totalQs) * 100) + '%' : 'N/A';
+
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${h.date}</td>
+                                <td><span class="history-score-badge ${scoreClass}">${h.score}%</span></td>
+                                <td>${formatTime(h.timeSpent)}</td>
+                                <td style="color: var(--text-muted); font-weight: 600;">${accuracy}</td>
+                                <td>
+                                    <button class="btn-primary" style="margin-top:0; padding: 4px 10px; font-size: 12px; border-radius: 6px;" onclick="viewAssessmentReview(${h.originalIdx})">👁️ Review</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    // Render Charts
+                    renderCharts(myStat);
+                }
+            }
+            
+            if (!isAdminView) {
+                const quizRes = await fetch(`${API_BASE}/api/quiz`);
+                quizSchedule = await quizRes.json();
+                checkSchedule();
+            } else {
+                document.getElementById('schedule-msg').style.display = 'none';
+            }
+        } catch (e) {
+            console.error("Failed to load stats or schedule", e);
+        }
+    }
+
+    function populateBadges(highScore, attempts, totalTime, correctCount) {
+        const container = document.getElementById('badges-container');
+        let badgesHTML = '';
+        
+        if (highScore >= 90) {
+            badgesHTML += `<div class="badge"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg> Elite Scholar</div>`;
+        } else if (highScore >= 70) {
+            badgesHTML += `<div class="badge silver"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Proficient</div>`;
+        }
+
+        if (attempts >= 5) {
+            badgesHTML += `<div class="badge bronze"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Dedicated</div>`;
+        }
+
+        if (correctCount >= 20) {
+            badgesHTML += `<div class="badge"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> Sharp Shooter</div>`;
+        }
+
+        if (badgesHTML !== '') {
+            container.innerHTML = badgesHTML;
+        }
+    }
+
+    function renderCharts(myStat) {
+        Chart.defaults.color = '#374151';
+        Chart.defaults.borderColor = 'rgba(0,0,0,0.1)';
+
+        // Time Chart
+        if (myStat.dailyTime && Object.keys(myStat.dailyTime).length > 0) {
+            const tCtx = document.getElementById('timeChart').getContext('2d');
+            timeChart = new Chart(tCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(myStat.dailyTime),
+                    datasets: [{
+                        label: 'Seconds',
+                        data: Object.values(myStat.dailyTime),
+                        backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                        borderColor: '#3b82f6',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+        } else {
+            document.getElementById('timeChart').style.display = 'none';
+        }
+
+        // Accuracy Chart
+        let totalC = myStat.correct || 0;
+        let totalW = myStat.wrong || 0;
+        let totalU = myStat.unanswered || 0;
+
+        if (totalC > 0 || totalW > 0 || totalU > 0) {
+            const aCtx = document.getElementById('accuracyChart').getContext('2d');
+            accuracyChart = new Chart(aCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Correct', 'Wrong', 'Unanswered'],
+                    datasets: [{
+                        data: [totalC, totalW, totalU],
+                        backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    cutout: '70%',
+                    plugins: { 
+                        legend: { position: 'bottom', labels: { boxWidth: 12 } }
+                    }
+                }
+            });
+        } else {
+            document.getElementById('accuracyChart').style.display = 'none';
+        }
+    }
+
+    function checkSchedule() {
+        const btn = document.getElementById('start-btn');
+        const msgEl = document.getElementById('schedule-msg');
+        
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const todayStr = `${year}-${month}-${day}`;
+        
+        let alreadyAttemptedToday = false;
+        if (studentData && studentData.history) {
+            alreadyAttemptedToday = studentData.history.some(h => h.date && h.date.startsWith(todayStr));
+        }
+        
+        if (quizSchedule && quizSchedule.startTime && quizSchedule.endTime) {
+            const now = new Date();
+            const start = new Date(quizSchedule.startTime);
+            const end = new Date(quizSchedule.endTime);
+            
+            if (now < start) {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+                msgEl.innerText = `Test has not started yet. Opens at: ${start.toLocaleString()}`;
+                msgEl.style.color = '#ef4444';
+            } else if (now > end) {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'not-allowed';
+                msgEl.innerText = `Test has ended.`;
+                msgEl.style.color = '#ef4444';
+            } else {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+                if (alreadyAttemptedToday) {
+                    btn.innerText = 'Retake Assessment (Practice)';
+                    msgEl.innerText = 'Test is active. Note: You have already completed your official attempt for today';
+                    msgEl.style.color = '#f59e0b';
+                } else {
+                    btn.innerText = 'Start Assessment';
+                    msgEl.innerText = `Test is active until: ${end.toLocaleString()}`;
+                    msgEl.style.color = '#34d399';
+                }
+            }
+        }
+    }
+
+    function handleHeaderAction() {
+        if (isAdminView) {
+            window.location.href = '../admin/admin.html';
+        } else {
+            localStorage.removeItem('currentUser');
+            window.location.href = '../index.html';
+        }
+    }
+
+    function startAssessment() {
+        if (document.getElementById('start-btn').disabled) return;
+        localStorage.setItem('assessmentStartTime', Date.now());
+        window.location.href = 'st.html';
+    }
+
+    function viewAssessmentReview(idx) {
+        window.location.href = `st.html?review=${idx}&username=${encodeURIComponent(targetUsername)}`;
+    }
+
+    window.onload = loadStatsAndSchedule;
+    setInterval(checkSchedule, 60000);
+</script>
+</body>
+</html>

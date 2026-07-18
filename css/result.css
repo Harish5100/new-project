@@ -1,0 +1,190 @@
+:root {
+    --primary: #4f46e5;
+    --text-main: #111827;
+    --text-muted: #374151;
+    --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    --glass: rgba(255, 255, 255, 0.95);
+    --glass-border: rgba(255, 255, 255, 0.8);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background: var(--bg-gradient);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow-x: hidden;
+}
+
+.background-shapes {
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+}
+
+.shape {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.4;
+}
+
+.shape-1 { width: 400px; height: 400px; background: #ec4899; top: -100px; left: -100px; animation: float 8s infinite; }
+.shape-2 { width: 300px; height: 300px; background: #8b5cf6; bottom: -50px; right: -50px; animation: float 10s infinite reverse; }
+.shape-3 { width: 250px; height: 250px; background: #3b82f6; top: 50%; left: 50%; transform: translate(-50%, -50%); animation: pulse 6s infinite; }
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(30px); }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.1); }
+}
+
+.container {
+    background: var(--glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 40px;
+    width: 100%;
+    max-width: 800px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+    margin: 20px;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.header h1 {
+    font-size: 32px;
+    background: linear-gradient(to right, #ec4899, #8b5cf6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+}
+
+.header p {
+    color: var(--text-muted);
+    font-size: 15px;
+}
+
+.table-container {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    margin-bottom: 30px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+th {
+    background: rgba(0, 0, 0, 0.03);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+td {
+    color: var(--text-main);
+    font-size: 15px;
+}
+
+tbody tr {
+    transition: background-color 0.2s;
+}
+
+tbody tr:hover {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.rank-1 { background: rgba(250, 204, 21, 0.1) !important; }
+.rank-2 { background: rgba(148, 163, 184, 0.1) !important; }
+.rank-3 { background: rgba(180, 83, 9, 0.1) !important; }
+
+.rank-cell {
+    font-size: 20px;
+    text-align: center;
+    width: 60px;
+}
+
+.score-badge {
+    background: linear-gradient(to right, #3b82f6, #8b5cf6);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 13px;
+    box-shadow: 0 4px 6px rgba(59, 130, 246, 0.2);
+}
+
+.back-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #64748b, #475569);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    box-shadow: 0 10px 20px -5px rgba(100, 116, 139, 0.5);
+}
+
+.back-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 25px -5px rgba(100, 116, 139, 0.6);
+}
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 600px) {
+    .container {
+        padding: 20px 15px;
+        margin: 10px;
+        border-radius: 12px;
+    }
+    .header h1 {
+        font-size: 24px;
+    }
+    th, td {
+        padding: 10px;
+        font-size: 13px;
+    }
+    .rank-cell {
+        width: 40px;
+        font-size: 16px;
+    }
+    .back-btn {
+        padding: 12px;
+        font-size: 14px;
+    }
+}

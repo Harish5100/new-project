@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Leaderboard</title>
+    <link rel="stylesheet" href="../../css/result.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>Global Leaderboard</h1>
+            <p>Top students based on highest score</p>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Student Name</th>
+                        <th>High Score</th>
+                        <th>Time Taken</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                    <!-- Dynamically loaded -->
+                    <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <button class="back-btn" onclick="goBack()">Back to Dashboard</button>
+    </div>
+
+    <script>
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' ? 'http://127.0.0.1:5000' : '';
+        function formatTime(seconds) {
+            if (!seconds) return '0s';
+            if (seconds < 60) return `${seconds}s`;
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+        }
+
+        async function loadLeaderboard() {
+            try {
+                const res = await fetch(`${API_BASE}/api/results`);
+                const fullData = await res.json();
+                let data = fullData.results || [];
+                
+                // Sort by highScore (descending), then time (ascending)
+                data.sort((a, b) => {
+                    const scoreA = a.highScore || a.latestScore || 0;
+                    const scoreB = b.highScore || b.latestScore || 0;
+                    if (scoreB !== scoreA) return scoreB - scoreA;
+                    
+                    const timeA = a.highScoreTime !== undefined ? a.highScoreTime : (a.totalTimeSpent || 0);
+                    const timeB = b.highScoreTime !== undefined ? b.highScoreTime : (b.totalTimeSpent || 0);
+                    return timeA - timeB;
+                });
+
+                const tbody = document.getElementById('leaderboard-body');
+                tbody.innerHTML = '';
+                
+                if (data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No results found yet.</td></tr>';
+                    return;
+                }
+
+                data.forEach((entry, index) => {
+                    let rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
+                    let rankIcon = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1);
+                    
+                    // Show current test time for the high score attempt
+                    let testTime = entry.highScoreTime !== undefined ? entry.highScoreTime : entry.totalTimeSpent;
+                    let displayScore = entry.highScore !== undefined ? entry.highScore : entry.latestScore;
+                    
+                    tbody.innerHTML += `
+                        <tr class="${rankClass}">
+                            <td class="rank-cell">${rankIcon}</td>
+                            <td style="font-weight: 600;">${entry.student_name || entry.username}</td>
+                            <td><span class="score-badge">${displayScore}%</span></td>
+                            <td>${formatTime(testTime)}</td>
+                        </tr>
+                    `;
+                });
+            } catch (e) {
+                console.error("Failed to load leaderboard", e);
+                document.getElementById('leaderboard-body').innerHTML = '<tr><td colspan="4" style="text-align: center; color: red;">Failed to load data</td></tr>';
+            }
+        }
+
+        function goBack() {
+            const user = JSON.parse(localStorage.getItem('currentUser'));
+            if (user && user.role === 'admin') {
+                window.location.href = '../admin/admin.html';
+            } else {
+                window.location.href = '../quiz/dashboard.html';
+            }
+        }
+
+        window.onload = loadLeaderboard;
+    </script>
+</body>
+</html>

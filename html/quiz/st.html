@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Aptitude Test</title>
+<link rel="stylesheet" href="../../css/st.css">
+</head>
+<body>
+    <div class = "con">
+        Welcome to the Digital Aptitude Test
+    </div>
+
+<div class="container">
+    <h1>Digital Aptitude Test</h1>
+
+    <div id="quiz">
+        <h2 id="question">Loading...</h2>
+        <div id="options"></div>
+        <button id="next-btn" class="hidden" onclick="nextQuestion()" style="margin-top: 15px; width: 100%; padding: 10px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600;">Next Question</button>
+
+        <div class="info">
+            <span id="timer">30s</span>
+            <span id="score">Score: 0</span>
+        </div>
+    </div>
+
+    <div id="result" class="hidden">
+        <div class="result-header">
+            <h2>Test Completed!</h2>
+            <div id="final-score" class="score-display"></div>
+            <p id="feedback"></p>
+        </div>
+        
+        <div class="stats-container">
+            <div class="stat-box correct-box">
+                <div class="stat-icon">✔️</div>
+                <div class="stat-label">Correct</div>
+                <div id="correct-count" class="stat-value">0</div>
+            </div>
+            <div class="stat-box wrong-box">
+                <div class="stat-icon">❌</div>
+                <div class="stat-label">Wrong</div>
+                <div id="wrong-count" class="stat-value">0</div>
+            </div>
+            <div class="stat-box skipped-box">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-label">Skipped</div>
+                <div id="unanswered-count" class="stat-value">0</div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button onclick="restartQuiz()" class="btn-dashboard" style="width: 100%;">Dashboard</button>
+        </div>
+
+        <div id="questions-breakdown" class="hidden" style="text-align: left; margin-top: 35px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 25px;">
+            <h3 style="margin-bottom: 20px; font-size: 20px; font-weight: 700; background: linear-gradient(to right, #60a5fa, #34d399); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">Question Review & Explanations</h3>
+            <div id="breakdown-list" style="display: flex; flex-direction: column; gap: 20px; margin-bottom: 20px;"></div>
+        </div>
+    </div>
+</div>
+    <script src="st.js"></script>
+
+</body>
+</html>
