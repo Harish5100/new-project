@@ -293,6 +293,23 @@ def get_results():
 
         r = result_dict.get(username)
         if r:
+            # Calculate highScoreTime from history
+            high_score_time = 0
+            if r.history:
+                best_score = -1
+                best_time = 999999
+                for attempt in r.history:
+                    s = attempt.get("score", 0)
+                    t = attempt.get("timeSpent", 0)
+                    if s > best_score:
+                        best_score = s
+                        best_time = t
+                    elif s == best_score and t < best_time:
+                        best_time = t
+                high_score_time = best_time if best_score != -1 else (r.totalTimeSpent or 0)
+            else:
+                high_score_time = r.totalTimeSpent or 0
+
             data["results"].append({
                 "username":      r.username,
                 "student_name":  student_name,
@@ -301,6 +318,7 @@ def get_results():
                 "latestScore":   r.latestScore,
                 "highScore":     r.highScore,
                 "totalTimeSpent":r.totalTimeSpent,
+                "highScoreTime": high_score_time,
                 "lastLogin":     r.lastLogin,
                 "correct":       r.correct,
                 "wrong":         r.wrong,
@@ -317,6 +335,7 @@ def get_results():
                 "latestScore":   0,
                 "highScore":     0,
                 "totalTimeSpent":0,
+                "highScoreTime": 0,
                 "lastLogin":     "",
                 "correct":       0,
                 "wrong":         0,
@@ -372,11 +391,11 @@ def save_result():
             return jsonify({"message": "Test has already been attempted today. Additional attempts are not recorded."}), 200
 
         existing.latestScore = score_val
-        existing.highScore = max(existing.highScore, score_val)
-        existing.totalTimeSpent += time_spent
-        existing.correct += correct_val
-        existing.wrong += wrong_val
-        existing.unanswered += unans_val
+        existing.highScore = max(existing.highScore or 0, score_val)
+        existing.totalTimeSpent = (existing.totalTimeSpent or 0) + time_spent
+        existing.correct = (existing.correct or 0) + correct_val
+        existing.wrong = (existing.wrong or 0) + wrong_val
+        existing.unanswered = (existing.unanswered or 0) + unans_val
         existing.lastLogin = date_time_str
         
         # SQLAlchemy JSON columns require reassignment to trigger update
@@ -526,8 +545,12 @@ def import_users():
             skipped  = []
 
             for index, row in df.iterrows():
-                username     = str(row[col_reg]).strip()
+                if pd.isna(row[col_reg]) or pd.isna(row[col_name]):
+                    continue
+                username = str(row[col_reg]).strip()
                 student_name = str(row[col_name]).strip()
+                if not username or username.lower() in ('nan', 'none', ''):
+                    continue
                 plain_password = username   # reg_id is the password
 
                 existing_user = student_user.query.filter_by(reg_id=username).first()

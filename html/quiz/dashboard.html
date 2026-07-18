@@ -215,19 +215,21 @@
     }
 
     const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:' ? 'http://127.0.0.1:5000' : '';
-    let targetUsername = user.username;
+    let targetUsername = user ? user.username : '';
     let isAdminView = false;
 
-    if (user.role === 'admin' && viewUser) {
-        isAdminView = true;
-        targetUsername = viewUser;
-        document.getElementById('action-buttons').style.display = 'none';
-        document.getElementById('dashboard-title').innerText = `${targetUsername}'s Dashboard`;
-        const headerBtn = document.getElementById('header-btn');
-        headerBtn.innerText = 'Back to Admin';
-        headerBtn.className = 'btn-primary';
-    } else if (user.role !== 'student') {
-        window.location.href = '../index.html';
+    if (user) {
+        if (user.role === 'admin' && viewUser) {
+            isAdminView = true;
+            targetUsername = viewUser;
+            document.getElementById('action-buttons').style.display = 'none';
+            document.getElementById('dashboard-title').innerText = `${targetUsername}'s Dashboard`;
+            const headerBtn = document.getElementById('header-btn');
+            headerBtn.innerText = 'Back to Admin';
+            headerBtn.className = 'btn-primary';
+        } else if (user.role !== 'student') {
+            window.location.href = '../index.html';
+        }
     }
 
     // Set greeting and date (will be updated with real name after API loads)
@@ -476,8 +478,16 @@
         window.location.href = `st.html?review=${idx}&username=${encodeURIComponent(targetUsername)}`;
     }
 
-    window.onload = loadStatsAndSchedule;
-    setInterval(checkSchedule, 60000);
+    window.onload = () => {
+        if (user) {
+            loadStatsAndSchedule();
+        }
+    };
+    setInterval(() => {
+        if (user) {
+            checkSchedule();
+        }
+    }, 60000);
 </script>
 </body>
 </html>
