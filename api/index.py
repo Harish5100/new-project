@@ -49,8 +49,8 @@ else:
     else:
         db_path = os.path.join(instance_dir, 'database.db').replace('\\', '/')
     database_uri = f'sqlite:///{db_path}'
-
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL", database_uri)
+print(app.config["SQLALCHEMY_DATABASE_URI"])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
